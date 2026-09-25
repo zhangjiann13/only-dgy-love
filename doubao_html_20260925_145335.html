@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中药化学｜考研名词解释随机背诵器</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui, sans-serif;}
+body{background:#f4f9f4;color:#222;padding:24px;max-width:960px;margin:0 auto;}
+h1{text-align:center;color:#2f6d44;margin-bottom:22px;}
+.tabs{display:flex;gap:10px;justify-content:center;margin-bottom:20px;flex-wrap:wrap;}
+.tab{padding:8px 18px;border:none;border-radius:8px;background:#d7e9dd;color:#2f6d44;font-size:16px;cursor:pointer;}
+.tab.active{background:#2f6d44;color:#fff;}
+.add-box{background:#fff;padding:18px;border-radius:12px;box-shadow:0 2px 10px #00000014;margin-bottom:24px;}
+.add-box h3{color:#2f6d44;margin-bottom:10px;}
+input,textarea{width:100%;padding:10px;margin:6px 0;border:1px solid #b9d8c5;border-radius:8px;font-size:16px;}
+button{padding:10px 16px;border:none;border-radius:8px;cursor:pointer;font-size:16px;margin:4px 2px;}
+.btn-add{background:#2f6d44;color:#fff;}
+.draw-box{background:#fff;border-radius:14px;min-height:280px;padding:30px;text-align:center;box-shadow:0 3px 12px #00000014;display:flex;flex-direction:column;justify-content:center;align-items:center;}
+.question{font-size:22px;font-weight:500;margin-bottom:16px;}
+.answer{font-size:17px;color:#444;white-space:pre-line;display:none;line-height:1.7;text-align:left;}
+.btns-wrap{margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+.btn-random{background:#348c54;color:#fff;}
+.btn-show{background:#407c64;color:#fff;}
+.btn-del{background:#b84242;color:#fff;}
+.btn-export{background:#3b74b8;color:#fff;}
+.btn-import{background:#8248b8;color:#fff;}
+#fileInput{display:none;}
+@media(max-width:600px){body{padding:14px;}}
+</style>
+</head>
+<body>
+<h1>🌿 中药化学｜考研名词解释随机背诵器</h1>
+<div class="tabs">
+    <button class="tab active" onclick="switchBank('a')">题库A【全套考研名词解释】</button>
+    <button class="tab" onclick="switchBank('b')">题库B【自定义新增】</button>
+</div>
+
+<div class="add-box">
+    <h3>录入新考点（名词解释/简答）</h3>
+    <input id="titleInput" placeholder="题干">
+    <textarea id="ansInput" rows="4" placeholder="答案"></textarea>
+    <button class="btn-add" onclick="addItem()">添加考点</button>
+</div>
+
+<div class="draw-box">
+    <div class="question" id="qBox">点击「随机抽题」开始背诵</div>
+    <div class="answer" id="aBox"></div>
+</div>
+
+<div class="btns-wrap">
+    <button class="btn-random" onclick="randomPick()">🎲 随机抽一题</button>
+    <button class="btn-show" onclick="toggleAnswer()">👁️ 显示/隐藏答案</button>
+    <button class="btn-del" onclick="delCurrent()">🗑️ 删除当前这道题</button>
+    <button class="btn-export" onclick="exportBank()">📤导出题库</button>
+    <button class="btn-import" onclick="document.getElementById('fileInput').click()">📥导入题库</button>
+    <input type="file" id="fileInput" accept=".json" onchange="importBank(event)">
+</div>
+
+<script>
+let currentBank = 'a';
+// ====================== 全套考研中药化学名词解释 60条 ======================
+const presetQuestions = [
+    {q:"苷",a:"苷又称配糖体，是糖或糖的衍生物与另一非糖物质（苷元）通过糖的端基碳原子脱水缩合形成的化合物。"},
+    {q:"苷元",a:"苷分子当中的非糖部分，称为苷元（配基），是苷的母核结构。"},
+    {q:"原生苷",a:"植物体内原来就存在的苷，没有经过水解，称为原生苷。"},
+    {q:"次生苷",a:"原生苷经酶或者酸水解，失去部分糖之后生成的苷，叫次生苷。"},
+    {q:"苷键",a:"连接糖与苷元或者糖与糖之间的化学键，叫做苷键。"},
+    {q:"苷化位移",a:"糖与苷元成苷之后，苷元的碳和糖的端基碳化学位移发生改变的现象，用于判断成苷位置。"},
+    {q:"单糖",a:"不能再水解的最简单糖类，是构成低聚糖、多糖的基本单元。"},
+    {q:"低聚糖",a:"由2～9个单糖分子脱水缩合而成，可水解得到相应单糖。"},
+    {q:"多糖",a:"10个及以上单糖脱水缩合，无甜味，无还原性，如淀粉、纤维素。"},
+    {q:"α-去氧糖",a:"2,6-二去氧糖，是强心苷特征性糖，Keller-Kiliani反应阳性。"},
+    {q:"香豆素",a:"母核苯并α-吡喃酮，具有内酯环；碱液长时间加热内酯开环，酸化闭环；多数具有荧光。"},
+    {q:"简单香豆素",a:"香豆素母核苯环上只有简单羟基、烷氧基取代，无呋喃、吡喃环。"},
+    {q:"呋喃香豆素",a:"香豆素母核苯环并呋喃环，光毒性，补骨脂素、异补骨脂素为本类代表。"},
+    {q:"吡喃香豆素",a:"香豆素母核苯环上并吡喃环，分为线型、角型。"},
+    {q:"木脂素",a:"由两分子C6-C3苯丙素单元聚合而成，脂溶性，遇酸易发生立体异构化。"},
+    {q:"苯丙素类",a:"基本骨架C6-C3，包含香豆素、木脂素、黄酮、苯丙酸类。"},
+    {q:"黄酮类化合物",a:"母核2-苯基苯并γ-吡喃酮，多具有酚羟基显酸性；盐酸镁粉反应阳性。"},
+    {q:"黄酮醇",a:"黄酮母核3位连羟基，是自然界分布最广黄酮类。"},
+    {q:"二氢黄酮",a:"黄酮C2-C3双键被还原，水溶性大于黄酮，有旋光性。"},
+    {q:"异黄酮",a:"B环连接在吡喃酮环3位，葛根素属于异黄酮。"},
+    {q:"查耳酮",a:"C环开环，2个苯环通过三碳共轭链相连，酸性弱于黄酮。"},
+    {q:"花色素",a:"黄酮母核C环为氧鎓离子，水溶性大，颜色随pH变化。"},
+    {q:"交叉共轭体系",a:"黄酮显色的根本原因，共轭体系使电子容易跃迁，产生可见光吸收。"},
+    {q:"蒽醌类化合物",a:"母核为蒽的衍生物，多具有酚羟基；游离蒽醌具有升华性；Borntrager反应阳性。"},
+    {q:"大黄素型蒽醌",a:"羟基分布在蒽醌母核两侧苯环上，大黄、虎杖中存在。"},
+    {q:"茜草素型蒽醌",a:"羟基只分布在蒽醌母核一侧苯环，茜草为本类代表。"},
+    {q:"二蒽酮",a:"两分子蒽酮C10-C10'相连，番泻苷A、B属于二蒽酮，是大黄泻下活性成分。"},
+    {q:"升华性",a:"固态物质不经液态直接气化，冷却后重新凝结为固体；游离蒽醌、樟脑有此性质。"},
+    {q:"萜类",a:"由甲戊二羟酸途径（MVA）衍生，基本单元异戊二烯，按异戊二烯数目分类。"},
+    {q:"单萜",a:"2个异戊二烯单位，C10；多为挥发油组成，如薄荷醇、龙脑。"},
+    {q:"倍半萜",a:"3个异戊二烯单位，C15；青蒿素属于倍半萜内酯。"},
+    {q:"二萜",a:"4个异戊二烯单位，C20；多数不具有挥发性；穿心莲内酯、紫杉醇。"},
+    {q:"挥发油",a:"精油，一类可随水蒸气蒸馏、具有挥发性、难溶于水的油状液体混合物。"},
+    {q:"析脑",a:"冷却挥发油，其中高熔点成分析出结晶（如薄荷脑）的现象。"},
+    {q:"皂苷",a:"一类苷类，水溶液振摇产生持久性泡沫；分为三萜皂苷、甾体皂苷，多数具有溶血作用。"},
+    {q:"三萜皂苷",a:"苷元为三萜（30个碳），多有羧基显酸性；醋酐-浓硫酸显色红至紫色。"},
+    {q:"甾体皂苷",a:"苷元为螺甾烷类，27碳，中性；醋酐浓硫酸显蓝绿色，无羧基。"},
+    {q:"溶血指数",a:"在一定条件下，能够使血液中红细胞完全溶血的最低浓度。"},
+    {q:"强心苷",a:"具有强心活性的甾体苷；母核强心甾；C17位连接不饱和内酯环；部分含α-去氧糖。"},
+    {q:"甲型强心苷",a:"C17位五元不饱和内酯环（Δαβ-γ内酯），天然绝大多数强心苷为此类。"},
+    {q:"乙型强心苷",a:"C17位六元不饱和内酯环，天然含量较少。"},
+    {q:"Keller-Kiliani反应",a:"α-去氧糖的鉴别反应；试剂冰醋酸、三氯化铁、浓硫酸；醋酸层蓝绿色。"},
+    {q:"Legal反应",a:"鉴别甲型强心苷五元不饱和内酯环；试剂亚硝酰铁氰化钠；显深红色。"},
+    {q:"生物碱",a:"生物界产生的含氮有机化合物，大多具有碱性，能与酸成盐。"},
+    {q:"伯胺、仲胺、叔胺生物碱",a:"按氮原子取代情况划分；碱性强弱：季铵>叔胺>仲胺>伯胺>酰胺。"},
+    {q:"季铵生物碱",a:"氮原子形成季铵阳离子，水溶性大，属于强碱，如小檗碱。"},
+    {q:"生物碱沉淀反应",a:"生物碱在酸性水或稀醇中和某些试剂生成难溶于水沉淀，用于检识生物碱。"},
+    {q:"鞣质（单宁）",a:"多元酚类大分子；可与蛋白质结合沉淀；可沉淀生物碱、重金属离子。"},
+    {q:"可水解鞣质",a:"酚酸与糖或多元醇通过苷键、酯键相连；酸、酶可水解，水解后无鞣质活性。"},
+    {q:"缩合鞣质",a:"黄烷醇类聚合而成，不能被酸水解；酸长时间加热生成鞣红。"},
+    {q:"提取原理：浸渍法",a:"常温下，溶剂浸泡药材，使可溶性成分溶出，适合遇热不稳定成分。"},
+    {q:"渗漉法",a:"药材装渗漉筒，不断添加新溶剂，自上而下渗透，浓度梯度持续提取，提取效率高于浸渍。"},
+    {q:"回流提取法",a:"加热回流，溶剂反复浸提药材；适合热稳定成分，不适合受热易破坏物质。"},
+    {q:"水蒸气蒸馏法",a:"用于提取具有挥发性、难溶于水、不与水反应的成分，如挥发油。"},
+    {q:"两相溶剂萃取法",a:"利用各成分在互不相溶两相溶剂分配系数不同，实现分离。"},
+    {q:"分配系数K",a:"在一定温度压力下，物质在两相溶剂达到平衡时浓度比值。"},
+    {q:"聚酰胺吸附色谱",a:"氢键吸附；适合酚类、黄酮、蒽醌；水洗脱能力最弱。"},
+    {q:"大孔吸附树脂",a:"多孔高分子材料；吸附+分子筛双重作用；水洗除糖，乙醇洗脱苷类。"},
+    {q:"离子交换色谱",a:"基于化合物解离后离子与树脂上离子发生交换，分离生物碱、有机酸。"},
+    {q:"硅胶吸附色谱",a:"物理吸附，依据极性差异分离；极性大的成分吸附更强，Rf更小。"},
+    {q:"Rf值（比移值）",a:"薄层色谱中，组分斑点移动距离/溶剂前沿移动距离，用于定性鉴别。"},
+    {q:"盐析",a:"向水溶液加入无机盐，降低目标成分溶解度，使其析出沉淀。"}
+];
+
+let data = {
+    a: [...presetQuestions],
+    b: []
+};
+let currentIndex = -1;
+
+//读取本地存储
+function loadData(){
+    const saved = localStorage.getItem("tcmChemBank");
+    if(saved) {
+        const local = JSON.parse(saved);
+        data = local;
+    }
+}
+function saveData(){
+    localStorage.setItem("tcmChemBank", JSON.stringify(data));
+}
+
+//切换题库
+function switchBank(which){
+    currentBank = which;
+    currentIndex = -1;
+    document.getElementById('qBox').textContent = "点击「随机抽题」开始背诵";
+    document.getElementById('aBox').style.display = 'none';
+    document.getElementById('aBox').textContent = '';
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+//新增考点
+function addItem(){
+    const q = document.getElementById('titleInput').value.trim();
+    const a = document.getElementById('ansInput').value.trim();
+    if(!q) return alert('题干不能为空！');
+    data[currentBank].push({q,a});
+    saveData();
+    document.getElementById('titleInput').value = '';
+    document.getElementById('ansInput').value = '';
+    alert("✅ 考点添加成功");
+}
+
+//随机抽题
+function randomPick(){
+    const list = data[currentBank];
+    if(list.length === 0) return alert("当前题库为空！");
+    const rnd = Math.floor(Math.random() * list.length);
+    currentIndex = rnd;
+    const item = list[rnd];
+    document.getElementById('qBox').textContent = item.q;
+    document.getElementById('aBox').textContent = item.a;
+    document.getElementById('aBox').style.display = 'none';
+}
+
+//显示隐藏答案
+function toggleAnswer(){
+    const ansDom = document.getElementById('aBox');
+    ansDom.style.display = ansDom.style.display === 'none' ? 'block' : 'none';
+}
+
+//删除当前题目
+function delCurrent(){
+    if(currentIndex === -1) return alert("还没有选中题目");
+    data[currentBank].splice(currentIndex,1);
+    saveData();
+    document.getElementById('qBox').textContent = "已删除，请重新抽题";
+    document.getElementById('aBox').style.display = 'none';
+    currentIndex=-1;
+}
+
+//导出全部题库（A+B）下载json文件
+function exportBank(){
+    const jsonStr = JSON.stringify(data,null,2);
+    const blob = new Blob([jsonStr],{type:"application/json"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "中药化学考研名词解释题库.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+//导入json题库
+function importBank(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev){
+        try{
+            const imported = JSON.parse(ev.target.result);
+            if(imported.a && imported.b){
+                data = imported;
+                saveData();
+                alert("✅题库导入成功！");
+                currentIndex=-1;
+                document.getElementById('qBox').textContent = "点击「随机抽题」开始背诵";
+                document.getElementById('aBox').style.display = 'none';
+            }else{
+                alert("❌文件格式不对");
+            }
+        }catch(err){
+            alert("❌解析失败，不是合法题库文件");
+        }
+    }
+    reader.readAsText(file);
+    e.target.value = '';
+}
+
+loadData();
+</script>
+</body>
+</html>
